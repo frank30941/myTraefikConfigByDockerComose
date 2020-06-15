@@ -39,7 +39,7 @@ services:
             - traefik.http.routers.traefik-https.entrypoints=https
             - traefik.http.routers.traefik-https.service=api@internal
             - traefik.http.routers.traefik-https.middlewares=traefik-auth
-            - "traefik.http.middlewares.traefik-auth.basicauth.users=${CODEUSER}:${HTTPSAUTHPWD}"
+            - "traefik.http.middlewares.traefik-auth.basicauth.users=${BASICAUTH}"
             - "traefik.http.routers.traefik-https.tls.certresolver=${CODEUSER}"
 volumes:
     v_traefik:
