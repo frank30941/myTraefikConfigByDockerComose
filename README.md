@@ -12,5 +12,5 @@ BASICAUTH='XXX'
 
 about the "BASICAUTH", you must use "htpasswd" to grenerate your password.
 ``` sh
-echo $(htpasswd -nb user ${PASSWORD})
+echo $(htpasswd -nb ${USER} ${PASSWORD})
 ```
