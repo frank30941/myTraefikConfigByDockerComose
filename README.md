@@ -7,7 +7,7 @@
 CODEUSER=XXX
 TRAEFIKURL=XXX
 EMAIL=XXX
-HTTPSAUTHPWD=XXX
+HTTPSAUTHPWD='XXX'
 ```
 
 about the "HTTPSAUTHPWD", you must use "htpasswd" to grenerate your password.
