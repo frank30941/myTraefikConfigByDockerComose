@@ -5,45 +5,58 @@ services:
         container_name: ${CODEUSER}_traefik
         restart: unless-stopped
         networks:
-            - netself
+            - ingress
+            - worknet
         ports:
             - 80:80
             - 443:443
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock:ro
-            - "v_traefik:/${CODEUSER}"
+            - "letsencrypt:/letsencrypt"
         environment:
             - TRAEFIK_API=true
             - TRAEFIK_PROVIDERS_DOCKER=true
+            - TRAEFIK_PROVIDERS_DOCKER_WATCH=true
+            - TRAEFIK_PROVIDERS_DOCKER_SWARMMODE=true
+            - TRAEFIK_PROVIDERS_DOCKER_SWARMMODEREFRESHSECONDS=30
             - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
+            - TRAEFIK_PROVIDERS_DOCKER_NETWORK=worknet
             - TRAEFIK_ENTRYPOINTS_HTTP_ADDRESS=:80
             - TRAEFIK_ENTRYPOINTS_HTTPS_ADDRESS=:443
             - "TRAEFIK_CERTIFICATESRESOLVERS_${CODEUSER}_ACME_HTTPCHALLENGE=true"
             - "TRAEFIK_CERTIFICATESRESOLVERS_${CODEUSER}_ACME_HTTPCHALLENGE_ENTRYPOINT=http"
             - "TRAEFIK_CERTIFICATESRESOLVERS_${CODEUSER}_ACME_EMAIL=${EMAIL}"
-            - "TRAEFIK_CERTIFICATESRESOLVERS_${CODEUSER}_ACME_STORAGE=/${CODEUSER}/acme.json"
+            - "TRAEFIK_CERTIFICATESRESOLVERS_${CODEUSER}_ACME_STORAGE=/letsencrypt/acme.json"
             - TRAEFIK_LOG=true
             - TRAEFIK_LOG_LEVEL=INFO
-            - "TRAEFIK_LOG_FILEPATH=/${CODEUSER}/error.log"
+            - "TRAEFIK_LOG_FILEPATH=/letsencrypt/error.log"
             - TRAEFIK_ACCESSLOG=true
-            - "TRAEFIK_ACCESSLOG_FILEPATH=/${CODEUSER}/access.log"
+            - "TRAEFIK_ACCESSLOG_FILEPATH=/letsencrypt/access.log"
             - TZ=Asia/Taipei
-        labels:
-            - traefik.enable=true
-            - "traefik.http.routers.traefik-http.rule=${TRAEFIKDOMAINNAME}"
-            - traefik.http.routers.traefik-http.service=api@internal
-            - traefik.http.routers.traefik-http.entrypoints=http
-            - traefik.http.routers.traefik-http.middlewares=traefik-redirect
-            - traefik.http.middlewares.traefik-redirect.redirectscheme.scheme=https
-            - "traefik.http.routers.traefik-https.rule=${TRAEFIKDOMAINNAME}"
-            - traefik.http.routers.traefik-https.entrypoints=https
-            - traefik.http.routers.traefik-https.service=api@internal
-            - traefik.http.routers.traefik-https.middlewares=traefik-auth
-            - "traefik.http.middlewares.traefik-auth.basicauth.users=${BASICAUTH}"
-            - "traefik.http.routers.traefik-https.tls.certresolver=${CODEUSER}"
+        deploy:
+            placement:
+                constraints: [node.role==manager]          
+            labels:
+                - traefik.enable=true
+                - "traefik.http.routers.traefik-http.rule=${TRAEFIKDOMAINNAME}"
+                - traefik.http.routers.traefik-http.service=api@internal
+                - traefik.http.routers.traefik-http.entrypoints=http
+                - traefik.http.routers.traefik-http.middlewares=traefik-redirect
+                - traefik.http.middlewares.traefik-redirect.redirectscheme.scheme=https
+                - "traefik.http.routers.traefik-https.rule=${TRAEFIKDOMAINNAME}"
+                - traefik.http.routers.traefik-https.entrypoints=https
+                - traefik.http.routers.traefik-https.service=api@internal
+                - traefik.http.routers.traefik-https.middlewares=traefik-auth
+                - "traefik.http.middlewares.traefik-auth.basicauth.users=${BASICAUTH}"
+                - "traefik.http.routers.traefik-https.tls.certresolver=${CODEUSER}"
 volumes:
-    v_traefik:
-        name: ${CODEUSER}_traefik
+    letsencrypt:
+        external: true
+        name: letsencrypt
 networks:
-    netself:
-        name: ${CODEUSER}
+    ingress:
+        external: true
+        name: ingress
+    worknet:
+        internal: true
+        name: worknet
