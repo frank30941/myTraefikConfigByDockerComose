@@ -1,15 +1,18 @@
-version: '3.7'
+version: '3.8'
 services:
     traefik:
         image: traefik
+        env_file:
+            - .env
         container_name: ${CODEUSER}_traefik
         restart: unless-stopped
         networks:
-            - ingress
+            - proxy
             - worknet
         ports:
-            - 80:80
-            - 443:443
+            - "80:80"
+            - "8080:8080"
+            - "443:443"
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock:ro
             - "letsencrypt:/letsencrypt"
@@ -28,7 +31,7 @@ services:
             - "TRAEFIK_CERTIFICATESRESOLVERS_${CODEUSER}_ACME_EMAIL=${EMAIL}"
             - "TRAEFIK_CERTIFICATESRESOLVERS_${CODEUSER}_ACME_STORAGE=/letsencrypt/acme.json"
             - TRAEFIK_LOG=true
-            - TRAEFIK_LOG_LEVEL=INFO
+            - TRAEFIK_LOG_LEVEL=DEBUG
             - "TRAEFIK_LOG_FILEPATH=/letsencrypt/error.log"
             - TRAEFIK_ACCESSLOG=true
             - "TRAEFIK_ACCESSLOG_FILEPATH=/letsencrypt/access.log"
@@ -49,14 +52,15 @@ services:
                 - traefik.http.routers.traefik-https.middlewares=traefik-auth
                 - "traefik.http.middlewares.traefik-auth.basicauth.users=${BASICAUTH}"
                 - "traefik.http.routers.traefik-https.tls.certresolver=${CODEUSER}"
+                - "traefik.http.services.traefik-service.loadbalancer.server.port=59999"
 volumes:
     letsencrypt:
         external: true
         name: letsencrypt
 networks:
-    ingress:
+    proxy:
         external: true
-        name: ingress
+        name: proxy
     worknet:
-        internal: true
+        external: true
         name: worknet
